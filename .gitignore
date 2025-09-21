@@ -1,0 +1,11 @@
+# Dependências do Node
+node_modules
+
+# Arquivos de ambiente (se você for usar)
+.env
+
+# Arquivo do Service Registry
+shared/serviceRegistry.json
+
+# Bancos de dados dos serviços
+services/*/data/*.json
