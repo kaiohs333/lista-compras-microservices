@@ -10,7 +10,7 @@ const serviceRegistry = require('../../shared/serviceRegistry');
 const initialItems = require('./data/initialItems'); // Importa os dados iniciais
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003; // CORREÇÃO: O roteiro indica porta 3003
 const JWT_SECRET = process.env.JWT_SECRET || 'seu-segredo-super-secreto';
 
 const db = new JsonDatabase(path.join(__dirname, 'data', 'items.json'));
