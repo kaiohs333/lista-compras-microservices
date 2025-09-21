@@ -104,6 +104,44 @@ app.get('/registry', (req, res) => {
     res.json(serviceRegistry.registry);
 });
 
+// Middleware de autenticação para o Gateway
+const authenticateGateway = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null) return res.sendStatus(401);
+    req.token = token; // Anexa o token para ser usado nas chamadas internas
+    next();
+};
+
+// GET /api/dashboard - Dashboard com estatísticas do usuário
+app.get('/api/dashboard', authenticateGateway, async (req, res) => {
+    try {
+        const listServiceUrl = await serviceRegistry.get('listService');
+        const userServiceUrl = await serviceRegistry.get('userService');
+        const decodedToken = jwt.decode(req.token);
+
+        if (!listServiceUrl || !userServiceUrl) {
+            return res.status(503).json({ message: 'Um ou mais serviços estão indisponíveis.' });
+        }
+
+        // Chamadas em paralelo para os serviços
+        const [userResponse, listsResponse] = await Promise.all([
+            axios.get(`${userServiceUrl}/users/${decodedToken.id}`, { headers: { authorization: `Bearer ${req.token}` } }),
+            axios.get(`${listServiceUrl}/lists`, { headers: { authorization: `Bearer ${req.token}` } })
+        ]);
+
+        const dashboardData = {
+            welcomeMessage: `Olá, ${userResponse.data.firstName}!`,
+            totalLists: listsResponse.data.length,
+            lists: listsResponse.data.map(list => ({ id: list.id, name: list.name, totalItems: list.summary.totalItems }))
+        };
+
+        res.json(dashboardData);
+
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao agregar dados para o dashboard', error: error.message });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`API Gateway rodando na porta ${PORT}`);
